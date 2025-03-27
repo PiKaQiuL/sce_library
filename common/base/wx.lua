@@ -1,0 +1,1 @@
+return require '@base.base.wx' --代码迁移到client_base

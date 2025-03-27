@@ -1,0 +1,1 @@
+return require '@base.preload.Custom' -- 代码迁移到client_base 保留入口

@@ -1,0 +1,1 @@
+return require '@base.uninstall.generate_count'
