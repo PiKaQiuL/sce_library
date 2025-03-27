@@ -1,4 +1,10 @@
 
+---@meta
+--- 提供协程相关的功能，支持异步编程
+--- @module 'base.co'
+--- @copyright SCE
+--- @license MIT
+
 local table_pack = table.pack
 local table_unpack = table.unpack
 local coroutine_running = coroutine.running
@@ -49,6 +55,9 @@ local function coroutine_resume_with_check(co, ...)
 end
 
 -- 将异步回调转换为协程
+---包装函数为协程函数，提供错误处理
+---@param func function 要包装的函数
+---@return function 包装后的协程函数
 local function wrap(func)
     return function(...)
         --if not check(func) then return false end
@@ -89,10 +98,17 @@ local function wrap(func)
     end
 end
 
+---在协程中调用函数，提供错误处理
+---@param func function 要调用的函数
+---@param ... any 传递给函数的参数
+---@return any ... 函数的返回值
 local function call(func, ...)
     return wrap(func)(...)
 end
 
+---包装函数为异步函数，在新协程中执行
+---@param fn function 要包装的函数
+---@param ... any 传递给函数的参数
 local function async(fn, ...)
     local co = coroutine_create(fn)
     return coroutine_resume_with_check(co, ...)
@@ -105,16 +121,23 @@ local async_next = (function(fn, ...)
     end)
 end)
 
+---在协程中休眠指定时间
+---@param timeout number 休眠时间（毫秒）
 local sleep = function(timeout)
     local _sleep = wrap(base_wait)
     return _sleep(timeout)
 end
 
+---在协程中休眠一帧
+---@return any 下一帧的返回值
 local sleep_one_frame = function()
     local _sleep_one_frame = wrap(base_next)
     return _sleep_one_frame()
 end
 
+---将函数转换为异步执行的函数
+---@param func function 要转换的函数
+---@return function 转换后的异步函数
 local will_async = function(func)
     return function(...)
         async(func, ...)
@@ -242,6 +265,19 @@ base.tsc.__TS__SetDescriptor(
     true
 )
 
+---@class CoModule
+---@field wrap fun(func:function):function 包装函数为协程函数，提供错误处理
+---@field call fun(func:function, ...):any 在协程中调用函数，提供错误处理
+---@field async fun(fn:function, ...):any 包装函数为异步函数，在新协程中执行
+---@field async_next fun(fn:function, ...) 在下一帧异步执行函数
+---@field will_async fun(func:function):function 将函数转换为异步执行的函数
+---@field sleep fun(timeout:number) 在协程中休眠指定时间
+---@field sleep_one_frame fun():any 在协程中休眠一帧
+---@field tsCo_to_thread fun(tsCo:Coroutine?):thread? 将Coroutine对象转换为thread
+---@field thread_to_tsCo fun(tr:thread?, is_main:boolean?):Coroutine? 将thread转换为Coroutine对象
+---@field Coroutine Coroutine 协程类
+
+---@type CoModule
 return {
     wrap = wrap,
     call = call,

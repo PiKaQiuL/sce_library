@@ -12,6 +12,12 @@ local error = error
 
 local traceback = nil
 
+---@meta
+--- 提供异常处理功能
+--- @module 'base.exception'
+--- @copyright SCE
+--- @license MIT
+
 local debug = rawget(_G, 'debug')
 if debug and debug.traceback then
     traceback = debug.traceback  -- 能用官方的traceback最好
@@ -120,7 +126,9 @@ function Exception:__tostring()
     return self:to_string()
 end
 
----@return Exception
+---将错误转换为异常对象
+---@param err any 错误对象或字符串
+---@return Exception 异常对象
 local function to_exception(err)
     if type(err) == 'table' and err.is_exception then
         return err
@@ -130,7 +138,8 @@ local function to_exception(err)
     return e
 end
 
----@param e Exception
+---抛出一个异常
+---@param e Exception|any 异常对象或错误消息
 local function throw(e)
     if instance_of(e, Exception) then
         local new_err = Exception:_make(2, 'rethrow exception')
@@ -168,6 +177,12 @@ base.throw = throw
 _G.get_default_exception_handler = get_default_exception_handler
 _G.set_default_exception_handler = set_default_exception_handler
 
+---@class ExceptionModule
+---@field Exception Exception 异常类
+---@field to_exception fun(err:any):Exception 将错误转换为异常对象
+---@field throw fun(e:Exception|any) 抛出一个异常
+
+---@type ExceptionModule
 return {
     Exception = Exception,
     to_exception = to_exception,

@@ -1,6 +1,11 @@
 if _G.class then
     return  -- 不要重复注册
 end
+
+---@class SCEContext
+---@field ClassMap table 类映射表，存储所有类的继承关系
+
+---@type fun():SCEContext
 local ImportSCEContext = ImportSCEContext
 if not ImportSCEContext then
     print('ImportSCEContext is nil')
@@ -9,11 +14,27 @@ if not ImportSCEContext then
     end
 end
 
+---@type SCEContext
 local SCE = ImportSCEContext()
 
+---@type table<string, table> 类名到类对象的映射表
 local class_name_map = {}
 
--- 继承通用接口
+---@class ClassMetatable
+---@field __cname string 类名
+---@field __ctype number 类型(1:C++对象, 2:Lua对象)
+---@field __index table 元表索引
+---@field __supper_map table<table, boolean> 父类映射表
+---@field super table|nil 父类
+---@field class table 类引用
+---@field ctor function 构造函数
+---@field new function 创建实例的函数
+---@field class_name function 获取类名的函数
+
+---创建一个新类
+---@param classname string 类名
+---@param super table|string|function|nil 父类，可以是类对象、类名字符串或C++创建函数
+---@return ClassMetatable 新创建的类
 local function class(classname, super)
     local cls = {}
 
@@ -99,6 +120,10 @@ local function class(classname, super)
     return cls
 end
 
+---检查对象是否是指定类或其子类的实例
+---@param ins table 要检查的对象
+---@param base table|string 基类或基类名
+---@return boolean 如果对象是指定类的实例则返回true，否则返回false
 local instance_of = function(ins, base)
     if type(ins) ~= 'table' or not ins.__supper_map then
         return false

@@ -1,5 +1,14 @@
+---@meta
+--- 提供JSON解析功能
+--- @module 'base.json_load'
+--- @copyright SCE
+--- @license MIT
+
+---@type table LPeg库，用于解析表达式语法
 local lpeg = require 'lpeglabel'
+---@type boolean|nil 是否保持键的排序
 local save_sort
+---@type function 打包表参数的函数
 local table_pack = table.pack
 
 local P = lpeg.P
@@ -13,6 +22,8 @@ local Cc = lpeg.Cc
 local Cp = lpeg.Cp
 local Cs = lpeg.Cs
 
+---转义字符映射表
+---@type table<string, string>
 local EscMap = {
     ['t']  = '\t',
     ['r']  = '\r',
@@ -20,12 +31,25 @@ local EscMap = {
     ['"']  = '"',
     ['\\'] = '\\',
 }
+
+---布尔值字符串映射表
+---@type table<string, boolean>
 local BoolMap = {
     ['true']  = true,
     ['false'] = false,
 }
 
+---哈希表元表，用于保持键的排序
+---@class HashTableMetatable
+---@field __pairs fun(self:table):function 迭代器函数
+---@field __newindex fun(self:table, k:any, v:any) 设置新索引的函数
+---@field __debugger_extand fun(self:table):table 调试器扩展函数
+
+---@type HashTableMetatable
 local hashmt = {
+    ---自定义pairs迭代器，按照插入顺序遍历
+    ---@param self table 哈希表
+    ---@return function 迭代器函数
     __pairs = function (self)
         local i = 1
         local function next()
@@ -42,6 +66,11 @@ local hashmt = {
         end
         return next
     end,
+    
+    ---自定义设置新索引的行为，保持插入顺序
+    ---@param self table 哈希表
+    ---@param k any 键
+    ---@param v any 值
     __newindex = function (self, k, v)
         local i = 2
         while self[i] do
@@ -50,6 +79,10 @@ local hashmt = {
         rawset(self, i, k)
         rawset(self, k, v)
     end,
+    
+    ---调试器扩展函数
+    ---@param self table 哈希表
+    ---@return table 扩展后的列表
     __debugger_extand = function (self)
         local list = {}
         for k, v in pairs(self) do
@@ -65,6 +98,10 @@ local tointeger = math.tointeger
 local tonumber = tonumber
 local setmetatable = setmetatable
 local rawset = rawset
+
+---创建一个哈希表解析器
+---@param patt any LPeg模式
+---@return function 解析函数
 local function HashTable(patt)
     return C(patt) / function (_, ...)
         local hash = table_pack(...)
